@@ -1,0 +1,63 @@
+name: Build and Deploy to ECS
+
+
+on:
+push:
+branches: [ main ]
+
+
+env:
+ECR_REPO: devops-demo-app
+AWS_REGION: us-east-1
+CLUSTER_NAME: devops-demo-cluster
+SERVICE_NAME: devops-demo-service
+
+
+jobs:
+build-and-deploy:
+runs-on: ubuntu-latest
+
+
+permissions:
+id-token: write
+contents: read
+
+
+steps:
+- name: Checkout
+uses: actions/checkout@v4
+
+
+- name: Configure AWS credentials (OIDC or secrets)
+uses: aws-actions/configure-aws-credentials@v2
+with:
+role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}
+aws-region: ${{ env.AWS_REGION }}
+
+
+- name: Login to ECR
+uses: aws-actions/amazon-ecr-login@v1
+
+
+- name: Build and push Docker image
+uses: docker/build-push-action@v5
+with:
+context: ./app
+push: true
+tags: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
+
+
+- name: Render ECS task definition
+id: render
+uses: aws-actions/amazon-ecs-render-task-definition@v1
+with:
+task-definition: ./pipeline/taskdef.json.tpl
+container-image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
+
+
+- name: Deploy to ECS
+uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+with:
+task-definition: ${{ steps.render.outputs.task-definition }}
+service: ${{ env.SERVICE_NAME }}
+cluster: ${{ env.CLUSTER_NAME }}
