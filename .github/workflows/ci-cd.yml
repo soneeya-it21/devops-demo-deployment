@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  AWS_ACCOUNT_ID: 3868-2553-3943
+  AWS_ACCOUNT_ID: 386825533943   # ✅ fixed: correct 12-digit account ID
   ECR_REPO: devops-demo-app
   AWS_REGION: us-east-1
   CLUSTER_NAME: devops-demo-cluster
@@ -41,8 +41,6 @@ jobs:
           tags: |
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
             ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
-          # 👇 Add registry explicitly
-          registry: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
       - name: Render ECS task definition
         id: render
