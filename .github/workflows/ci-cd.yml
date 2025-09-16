@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  AWS_ACCOUNT_ID: 386825533943   # ✅ fixed: correct 12-digit account ID
+  AWS_ACCOUNT_ID: 386825533943
   ECR_REPO: devops-demo-app
   AWS_REGION: us-east-1
   CLUSTER_NAME: devops-demo-cluster
@@ -47,6 +47,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ./pipeline/taskdef.json.tpl
+          container-name: app   # 👈 must match "name" in your taskdef.json.tpl
           container-image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
 
       - name: Deploy to ECS
