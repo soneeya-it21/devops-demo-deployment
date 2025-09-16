@@ -6,10 +6,11 @@ on:
 
 env:
   AWS_REGION: us-east-1
-  ECR_REPO: devops-demo-app
+  ACCOUNT_ID: 386825533943
+  ECR_REGISTRY: 386825533943.dkr.ecr.us-east-1.amazonaws.com   # 👈 Add this
+  ECR_REPOSITORY: devops-demo-app                              # 👈 Add this
   CLUSTER_NAME: devops-demo-cluster
   SERVICE_NAME: devops-demo-service
-  ACCOUNT_ID: 386825533943
 
 jobs:
   build-and-deploy:
@@ -36,9 +37,8 @@ jobs:
 
       - name: Build, tag, and push image to Amazon ECR
         run: |
-         docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest -f app/Dockerfile app/
-         docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
-
+          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest -f app/Dockerfile app/
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
