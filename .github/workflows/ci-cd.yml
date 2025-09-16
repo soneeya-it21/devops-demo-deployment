@@ -5,15 +5,19 @@ on:
     branches: [ main ]
 
 env:
-  AWS_ACCOUNT_ID: 386825533943
-  ECR_REPO: devops-demo-app
   AWS_REGION: us-east-1
+  ECR_REPO: devops-demo-app
   CLUSTER_NAME: devops-demo-cluster
   SERVICE_NAME: devops-demo-service
+  ACCOUNT_ID: 386825533943
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout
@@ -28,31 +32,16 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          mask-password: true
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./app
-          push: true
-          platforms: linux/amd64
-          tags: |
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
-            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
-
-      - name: Render ECS task definition
-        id: render
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./pipeline/taskdef.json.tpl
-          container-name: app   # 👈 must match "name" in your taskdef.json.tpl
-          container-image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:${{ github.sha }}
+      - name: Build, tag, and push image to Amazon ECR
+        run: |
+          docker build -t ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest .
+          docker push ${{ env.ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPO }}:latest
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.render.outputs.task-definition }}
+          task-definition: ./pipeline/taskdef.json
           service: ${{ env.SERVICE_NAME }}
           cluster: ${{ env.CLUSTER_NAME }}
