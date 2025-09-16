@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  AWS_ACCOUNT_ID: 3868-2553-3943       # Your AWS Account ID
+  AWS_ACCOUNT_ID: 3868-2553-3943
   ECR_REPO: devops-demo-app
   AWS_REGION: us-east-1
   CLUSTER_NAME: devops-demo-cluster
@@ -29,8 +29,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
